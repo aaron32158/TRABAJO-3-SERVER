@@ -5,6 +5,8 @@ const User = require('../models/User');
 const isAuthenticated = require('../middleware/isAuthenticated');
 const isProfileOwner = require('../middleware/isProfileOwner');
 
+//USERS ROUTES
+//see users details
 router.get('/user-detail/:userId', (req, res, next) => {
 
   const { userId } = req.params
@@ -19,6 +21,8 @@ router.get('/user-detail/:userId', (req, res, next) => {
     })
 
 });
+
+//USER UPDATE 
 
 router.post('/user-update/:userId', isAuthenticated, isProfileOwner, (req, res, next) => {
 
@@ -46,6 +50,8 @@ router.post('/user-update/:userId', isAuthenticated, isProfileOwner, (req, res, 
   })
 
 })
+
+//DELETE USER
 
 router.get('/delete/:userId', isAuthenticated, isProfileOwner, (req, res, next) => {
 
