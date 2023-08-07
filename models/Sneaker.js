@@ -10,6 +10,7 @@ const sneakerSchema = new Schema(
         details: String,
         material: String,
         color: String,
+       
         cost: {
             type: Number,
             default: 0
@@ -19,7 +20,7 @@ const sneakerSchema = new Schema(
         comments: [{ type: Schema.Types.ObjectId, ref: 'Comment' }]
     },
     {
-        timeseries: true
+        timestamps: true
     }
 )
 
