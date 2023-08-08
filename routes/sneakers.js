@@ -22,7 +22,7 @@ router.get('/', (req, res, next) => {
 
 router.post('/new-sneaker', isAuthenticated, (req, res, next) => {
 
-    const {  type, image, brand, size, usage, details, material, color } = req.body
+    const {  type, image, brand, size, usage, details, material, color, cost, owner } = req.body
 
     Sneaker.create(
         { 
@@ -33,7 +33,9 @@ router.post('/new-sneaker', isAuthenticated, (req, res, next) => {
             usage,
             details,
             material,
-            color
+            color,
+            cost,
+            owner
         }
         )
         .then((newSneaker) => {
@@ -69,7 +71,7 @@ router.post('/sneaker-update/:sneakerId', isAuthenticated, isSneakerOwner, (req,
 
     const { sneakerId } = req.params
 
-    const { type, image, brand, size, usage, details, material, color } = req.body
+    const { type, image, brand, size, usage, details, material, color, cost, owner } = req.body
 
     Sneaker.findByIdAndUpdate(
         sneakerId,
@@ -81,7 +83,9 @@ router.post('/sneaker-update/:sneakerId', isAuthenticated, isSneakerOwner, (req,
             usage,
             details,
             material,
-            color
+            color,
+            cost,
+            owner
         },
         { new: true}
     )
