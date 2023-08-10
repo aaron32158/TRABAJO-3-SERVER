@@ -8,10 +8,10 @@ const isAuthenticated = require('../middleware/isAuthenticated');
 
 router.get('/', isAuthenticated, (req, res, next) => {
 
-    const cartId = req.use.cart
-
-    Cart.findById(cartId)
-        .populate('sneaker')
+    Cart.findOne({
+        owner: req.user._id
+    })
+        .populate('sneakers')
         .then((foundCart) => {
             if(!foundCart) {
                 return res.json({message: 'Your cart is empty'})
@@ -25,76 +25,102 @@ router.get('/', isAuthenticated, (req, res, next) => {
 
 });
 
-router.post('/create', isAuthenticated, (req, res, next) => {
+router.post('/create', isAuthenticated, async (req, res, next) => {
 
-    const { sneakerId, subtotal, total } = req.body
+    try {
 
+        const { sneakerId, sneakerCost } = req.body
+    
+        const newCart = await Cart.create({
+            owner: req.user._id,
+            subtotal: sneakerCost, 
+            total: sneakerCost + 10,
+            sneakers: [sneakerId]
+        })
+    
+        const populated = await newCart.populate('sneakers')
+
+        console.log("POPULATED ====>", populated)
+    
+            res.json(populated)
+
+    } catch (err) {
+        
+        res.json(err)
+        console.log(err)
+        next(err)
+
+    }
+
+})
+
+router.post('/update', isAuthenticated, async (req, res, next) => {
+
+    try {
+
+        const { sneakerId, cartId, sneakerCost } = req.body
+
+        const toUpdate = await Cart.findById(cartId)
+    
+        toUpdate.subtotal += sneakerCost
+        toUpdate.total = toUpdate.subtotal + 10
+        toUpdate.sneakers.push(sneakerId)
+
+        const newCart = await toUpdate.save()
+    
+        const populated = await newCart.populate('sneakers')
+    
+            res.json(populated)
+
+    } catch (err) {
+        
+        res.redirect(307, '/cart/create')
+        console.log(err)
+        next(err)
+    }
+
+})
+
+router.post('/remove-sneaker/:sneakerId', isAuthenticated, async (req, res, next) => {
     
 
-    Cart.create({
-        owner: req.user._id,
-        subtotal, 
-        total,
-        // timeLeft: expiry,
-        $push: {sneaker: sneakerId}
-    })
-        .then((createdCart) => {
-            res.json(createdCart)
-        })
-        .catch((err) => {
-            console.log(err)
-            next(err)
-        })
+    try {
 
-})
+        const cartId = req.body._id
+        
+        const { sneakerId } = req.params
 
-router.post('/update', isAuthenticated, (req, res, next) => {
+        console.log("SNEAKERID ===>", sneakerId)
 
-    const { sneakerId, subtotal, total } = req.body
+        const toPopulate = await Cart.findById(cartId)
 
-    const cartId = req.user.cart
-    
-    Cart.findByIdAndUpdate(
-        cartId,
-        {
-            subtotal, 
-            total,
-            $push: {sneakers: sneakerId}
-        },
-        { return: true }
-    )
-        .populate('sneaker')
-        .then((updatedCart) => {
-            res.json(updatedCart)
-        })
-        .catch((err) => {
-            console.log(err)
-            next(err)
-        })
+        const cart = await toPopulate.populate('sneakers')
 
-})
+        console.log("Cart ===>", cart)
 
-router.post('/remove-sneaker/:sneakerId', isAuthenticated, (req, res, next) => {
+        let sneaker = cart.sneakers.find((thisSneaker) => thisSneaker._id.toString() === sneakerId)
 
-    const cartId = req.user.cart
-    const { sneakerId } = req.params
+        console.log("Sneaker ====>", sneaker)
+        
+        let remainingSneakers = cart.sneakers.filter((sneaker) => sneaker._id.toString() !== sneakerId)
 
-    Cart.findByIdAndUpdate(
-        cartId,
-        {
-            $pull: {sneaker: sneakerId}
-        },
-        { new: true }
-    )
-        .populate('sneaker')
-        .then((updatedCart) => {
-            res.json(updatedCart)
-        })
-        .catch((err) => {
-            console.log(err)
-            next(err)
-        })
+        cart.sneakers = remainingSneakers
+        cart.subtotal -= sneaker.cost
+        cart.total = cart.subtotal + cart.shipping
 
-})
+        let newCart = await cart.save()
+
+        console.log("New cart ===>", newCart)
+
+        res.json(newCart)
+
+    } catch (err) {
+
+        res.json(err)
+        console.log(err)
+        next(err)
+    }
+
+  })
 
 module.exports = router;
